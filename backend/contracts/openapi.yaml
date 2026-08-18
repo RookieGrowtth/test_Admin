@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info:
+  title: AI-TestHub API
+  version: 1.0.0
+  description: |
+    Versioned REST API for AI-TestHub. Authenticate with `Authorization: Bearer <session JWT or ath_ API token>`.
+    API Tokens are additionally limited by level (`read`, `write`, `admin`) and project scope.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get: { summary: Health probe, security: [], responses: { '200': { description: Service is healthy } } }
+  /me:
+    get: { summary: Current identity and effective permissions, responses: { '200': { description: Identity } } }
+  /projects:
+    get: { summary: List visible projects, responses: { '200': { description: Project collection } } }
+  /cases:
+    get: { summary: List cases, parameters: [{ name: projectId, in: query, schema: { type: string } }], responses: { '200': { description: Case collection } } }
+  /cases/import:
+    post:
+      summary: Bulk import test cases (maximum 1000 rows)
+      responses: { '201': { description: Imported }, '422': { description: Validation or limit error } }
+  /cases/export:
+    get:
+      summary: Export cases as CSV by case type
+      parameters: [{ name: caseType, in: query, schema: { enum: [functional, api, ui, performance, security, compatibility] } }, { name: projectId, in: query, schema: { type: string } }]
+      responses: { '200': { description: CSV file } }
+  /plans:
+    get: { summary: List test plans, parameters: [{ name: projectId, in: query, schema: { type: string } }], responses: { '200': { description: Plan collection } } }
+  /defects:
+    get: { summary: List defects, parameters: [{ name: projectId, in: query, schema: { type: string } }, { name: status, in: query, schema: { type: string } }], responses: { '200': { description: Defect collection } } }
+  /reports/summary:
+    get: { summary: Quality summary, responses: { '200': { description: Summary } } }
+  /ui-cases:
+    get: { summary: List UI automation scripts, responses: { '200': { description: UI scripts } } }
+  /ui-runs:
+    get: { summary: List UI execution records, responses: { '200': { description: UI runs } } }
+  /ui-runs/{runId}/callback:
+    patch:
+      summary: Runner callback for a queued UI execution
+      description: Requires a write or admin token with access to the script project.
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [status], properties: { status: { enum: [passed, failed, blocked] }, duration: { type: number }, log: { type: string }, artifactUrl: { type: string } } } } } }
+      responses: { '200': { description: Run updated }, '403': { description: Token scope denied } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }

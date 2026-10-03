@@ -8,7 +8,7 @@ import { need, publicUser, permitted, tokenLevelAllows, tokenProjectAllows, proj
 import { json, failure, body } from '../lib/http.js';
 import { summary } from '../services/summary.js';
 import { reportHtml } from '../services/report.js';
-import { maskAiConfig } from '../services/ai.js';
+import { maskAiConfig, publicAiModel } from '../services/ai.js';
 
 export async function handle(req, res, url, ctx) {
   const { auth, actor } = ctx;
@@ -27,7 +27,7 @@ export async function handle(req, res, url, ctx) {
     if (!need(res, auth, 'project:read')) return true;
     const projects = state.projects.filter((p) => projectVisible(auth, p));
     const ids = new Set(projects.map((p) => p.id));
-    return json(res, 200, { user: publicUser(actor), permissions: roles[actor.role].permissions, roles, projects, cases: state.cases.filter((c) => ids.has(c.projectId)), plans: state.plans.filter((p) => ids.has(p.projectId)), defects: state.defects.filter((d) => ids.has(d.projectId)), users: permitted(actor, 'user:manage') ? state.users.map(publicUser) : state.users.filter((u) => projects.some((p) => p.members.includes(u.id))).map(publicUser), aiConfigs: permitted(actor, 'ai:manage') && tokenLevelAllows(auth, 'ai:manage') ? state.aiConfigs.map(maskAiConfig) : [], uiCases: state.uiCases.filter((c) => ids.has(c.projectId) && tokenProjectAllows(auth, c.projectId)), tokenContext: auth ? { kind: auth.kind, level: auth.level, projectIds: auth.projectIds } : null, summary: summary() }), true;
+    return json(res, 200, { user: publicUser(actor), permissions: roles[actor.role].permissions, roles, projects, cases: state.cases.filter((c) => ids.has(c.projectId)), plans: state.plans.filter((p) => ids.has(p.projectId)), defects: state.defects.filter((d) => ids.has(d.projectId)), users: permitted(actor, 'user:manage') ? state.users.map(publicUser) : state.users.filter((u) => projects.some((p) => p.members.includes(u.id))).map(publicUser), aiConfigs: permitted(actor, 'ai:manage') && tokenLevelAllows(auth, 'ai:manage') ? state.aiConfigs.map(maskAiConfig) : [], aiModels: permitted(actor, 'ai:use') ? state.aiConfigs.map(publicAiModel) : [], uiCases: state.uiCases.filter((c) => ids.has(c.projectId) && tokenProjectAllows(auth, c.projectId)), tokenContext: auth ? { kind: auth.kind, level: auth.level, projectIds: auth.projectIds } : null, summary: summary() }), true;
   }
 
   if (req.method === 'GET' && url.pathname === '/api/reports/summary') {

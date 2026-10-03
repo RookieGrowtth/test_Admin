@@ -59,6 +59,7 @@ export async function handle(req, res, url, ctx, parts) {
     const input = await body(req);
     if (!input.projectId || !input.title) return failure(res, 422, '项目和用例标题不能为空', 'validation_error'), true;
     if (!need(res, auth, 'case:write', input.projectId)) return true;
+    if (!state.projects.some(p => p.id === input.projectId)) return failure(res, 422, '项目不存在', 'validation_error'), true;
     const item = { id: randomUUID(), projectId: input.projectId, title: input.title, module: input.module || '未分类', caseType: normalizeCaseType(input.caseType), priority: input.priority || 'P1', tags: asArray(input.tags), precondition: input.precondition || '', steps: asArray(input.steps), status: 'active', createdBy: actor.id, createdAt: new Date().toISOString() };
     state.cases.push(item);
     audit(actor, 'case.create', item.title);

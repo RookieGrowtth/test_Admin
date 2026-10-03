@@ -14,6 +14,8 @@ export async function handle(req, res, url, ctx, parts) {
     const input = await body(req);
     if (!input.projectId || !input.name || !asArray(input.caseIds).length) return failure(res, 422, '项目、计划名称和至少一条用例不能为空', 'validation_error'), true;
     if (!need(res, auth, 'plan:write', input.projectId)) return true;
+    if (!state.projects.some(p => p.id === input.projectId)) return failure(res, 422, '项目不存在', 'validation_error'), true;
+    if (asArray(input.caseIds).some(id => !state.cases.some(c => c.id === id && c.projectId === input.projectId))) return failure(res, 422, '计划用例不存在或不属于所选项目', 'validation_error'), true;
     const item = { id: randomUUID(), projectId: input.projectId, name: input.name, version: input.version || '', status: 'draft', caseIds: asArray(input.caseIds), ownerId: actor.id, createdAt: new Date().toISOString(), executions: [] };
     state.plans.push(item);
     audit(actor, 'plan.create', item.name);
@@ -26,8 +28,9 @@ export async function handle(req, res, url, ctx, parts) {
     if (!plan) return failure(res, 404, '测试计划不存在', 'not_found'), true;
     if (!need(res, auth, 'execution:write', plan.projectId)) return true;
     const input = await body(req); const results = asArray(input.results);
+    // Validate the entire batch before mutating any result (including in-memory state).
+    if (results.some(result => !result || !plan.caseIds.includes(result.caseId) || !['passed', 'failed', 'blocked', 'skipped'].includes(result.status))) return failure(res, 422, '执行结果不合法', 'validation_error'), true;
     for (const result of results) {
-      if (!plan.caseIds.includes(result.caseId) || !['passed', 'failed', 'blocked', 'skipped'].includes(result.status)) return failure(res, 422, '执行结果不合法', 'validation_error'), true;
       const old = plan.executions.find((e) => e.caseId === result.caseId);
       const execution = { id: old?.id || randomUUID(), caseId: result.caseId, status: result.status, note: String(result.note || ''), executorId: actor.id, executedAt: new Date().toISOString() };
       if (old) Object.assign(old, execution); else plan.executions.push(execution);

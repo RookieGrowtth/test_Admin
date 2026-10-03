@@ -40,6 +40,7 @@ export function saveState(next) { stateRepository.save(next); }
 
 /* --- 启动归一化（兼容旧数据结构） --- */
 state.uiCases ||= []; state.apiTokens ||= []; state.aiConfigs ||= []; state.auditLogs ||= [];
+if(!state.aiConfigs.length){state.aiConfigs.push(defaultQwenConfig());saveState(state);}
 state.users.forEach((user) => { user.passwordVersion ??= 0; });
 state.cases.forEach((testCase) => { testCase.caseType ||= 'functional'; });
 if (!state.uiCases.length) {
@@ -54,3 +55,4 @@ export function audit(actor, action, detail) {
   state.auditLogs = state.auditLogs.slice(0, 500);
   saveState(state);
 }
+import {defaultQwenConfig} from '../services/ai-defaults.js';

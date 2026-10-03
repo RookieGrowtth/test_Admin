@@ -29,6 +29,7 @@ npm start
 - 实时质量统计与 HTML 报告导出；导出的 HTML 可直接使用浏览器“打印 → 存储为 PDF”。
 - OpenAI 兼容接口的多模型配置，API Key 使用 AES-256-GCM 加密落盘且永不回传浏览器。
 - 测试用例生成、缺陷根因分析、测试报告摘要三项 AI 技能。
+- 原测试工具箱的 Word/PDF/图片识别、知识库、XMind 与多工作表用例导出已接入；原引擎仅支持 macOS Apple Silicon，Linux/Docker 部署不支持该引擎。
 - 标准 TOTP 双因素认证（Google/Microsoft Authenticator 兼容）。
 - Docker Compose 数据卷持久化。
 

@@ -23,7 +23,7 @@ export function failure(res, status, message, code = 'request_failed', requestId
 /* --- 请求体解析（限制 8MB，供 Excel Base64 上传） --- */
 export async function body(req) {
   let raw = '';
-  for await (const part of req) { raw += part; if (raw.length > 8 * 1024 * 1024) throw new Error('请求体过大：Excel 文件最大支持 6MB'); }
+  for await (const part of req) { raw += part; if (raw.length > (req.url?.startsWith('/api/ai/engine/') ? 16 : 8) * 1024 * 1024) throw new Error('请求体过大'); }
   try { return raw ? JSON.parse(raw) : {}; } catch { throw new Error('Request body must be valid JSON'); }
 }
 
